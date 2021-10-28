@@ -1,14 +1,20 @@
-from urllib.parse import urlparse, parse_qs
+"""
+Udemy coupon validator
+"""
+
 import requests as req
-import re
+from udemy_validator.util import get_course_id, get_coupon_code
 
 
 def validate(scrapper_link):
-    # Get course ID
+    """
+    Validates coupon data to ensure it's usable
+    :param scrapper_link: (str) Udemy course link retrieved from scrapper
+    :return: (bool) True=valid False=invalid
+    """
     course_id = get_course_id(scrapper_link)
-    # Get coupon code
     coupon_code = get_coupon_code(scrapper_link)
-    # Validate
+
     url_string = (f"https://www.udemy.com/api-2.0/course-landing-components/{course_id}"
                   f"/me/?couponCode={coupon_code}&components=redeem_coupon,discount_expiration"
                   )
@@ -23,15 +29,3 @@ def validate(scrapper_link):
             return True
         else:
             return False
-
-
-def get_coupon_code(url):
-    u = urlparse(url)
-    query = parse_qs(u.query, keep_blank_values=True)
-    return query.get('couponCode')[0]
-
-
-def get_course_id(url):
-    txt = req.get(url).text
-    id_rx = re.compile('course-id=\"([0-9]+)\"')
-    return id_rx.search(txt)[1]

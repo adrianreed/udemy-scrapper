@@ -1,10 +1,14 @@
+"""
+Scrapper for SmartyBro
+"""
+
 from urllib.parse import parse_qs, urlparse
 from bs4 import BeautifulSoup
-from util import validate
 import requests as req
+from udemy_validator.validator import validate
 
 
-def scrap_smart(site_url):
+def scrap_smartybro(site_url):
     print(f'Searching {site_url}')
     result_course_list = list()
     courses_list = list()

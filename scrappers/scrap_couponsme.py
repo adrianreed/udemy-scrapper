@@ -1,6 +1,10 @@
+"""
+Scrapper for CouponsMe
+"""
+
 from bs4 import BeautifulSoup
-from util import validate
 import requests as req
+from udemy_validator.validator import validate
 
 
 def scrap_couponsme(site_url):
