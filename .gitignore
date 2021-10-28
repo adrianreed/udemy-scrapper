@@ -1,0 +1,13 @@
+.idea
+*.iml
+out
+gen
+.DS_Store
+*.pyc
+*.egg-info
+/dist
+/docs/_build/*
+/.cache
+/.eggs
+/build
+/venv
