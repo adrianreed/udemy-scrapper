@@ -2,10 +2,9 @@
 Scrapper for SmartyBro
 """
 
-import requests as req
-from bs4 import BeautifulSoup
 from udemy_validator.util import get_coupon_code
 from udemy_validator.validator import validate
+from scrappers.util import get_soup
 
 
 def scrap_smartybro(site_url):
@@ -14,8 +13,7 @@ def scrap_smartybro(site_url):
     valid_courses = list()
 
     try:
-        text = req.get(site_url).text
-        soup = BeautifulSoup(text, 'html.parser')
+        soup = get_soup(site_url)
         grid = soup.find_all("div", {"class": "item"})
     except Exception as e:
         print(f"Error getting {site_url}: {e}")
@@ -30,8 +28,7 @@ def scrap_smartybro(site_url):
 
     for course in scrapped_courses:
         try:
-            course_text = req.get(course).text
-            course_soup = BeautifulSoup(course_text, 'html.parser')
+            course_soup = get_soup(course)
             class_info = {"class": "fasc-button fasc-size-xlarge fasc-type-flat"}
             course_url = course_soup.find("a", class_info, href=True)["href"]
             coupon_code = get_coupon_code(course_url)

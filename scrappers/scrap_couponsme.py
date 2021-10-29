@@ -2,9 +2,8 @@
 Scrapper for CouponsMe
 """
 
-from bs4 import BeautifulSoup
-import requests as req
 from udemy_validator.validator import validate
+from scrappers.util import get_soup
 
 
 def scrap_couponsme(site_url):
@@ -12,14 +11,8 @@ def scrap_couponsme(site_url):
     valid_courses = list()
     scrapped_courses = list()
 
-    h_data = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-              " AppleWebKit/537.36 (KHTML, like Gecko)"
-              " Chrome/95.0.4638.54"
-              " Safari/537.36")
-    header = {"User-Agent": h_data}
     try:
-        text = req.get(site_url, headers=header).text
-        soup = BeautifulSoup(text, 'html.parser')
+        soup = get_soup(site_url)
         grid = soup.find_all("a", {"rel": "bookmark"}, href=True)
     except Exception as e:
         print(f"Error getting {site_url}: {e}")
@@ -28,10 +21,11 @@ def scrap_couponsme(site_url):
     for item in grid:
         scrapped_courses.append(item["href"])
 
+    scrapped_courses = list(dict.fromkeys(scrapped_courses))
+
     for course in scrapped_courses:
         try:
-            text = req.get(course, headers=header).text
-            soup = BeautifulSoup(text, 'html.parser')
+            soup = get_soup(course)
             links = soup.find_all("a", {"target": "_blank"}, href=True, text=True)
             for link in links:
                 if '[ENROLL THE COURSE]' in link.text:
