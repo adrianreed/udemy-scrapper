@@ -2,40 +2,47 @@
 Scrapper for SmartyBro
 """
 
-from urllib.parse import parse_qs, urlparse
-from bs4 import BeautifulSoup
 import requests as req
+from bs4 import BeautifulSoup
+from udemy_validator.util import get_coupon_code
 from udemy_validator.validator import validate
 
 
 def scrap_smartybro(site_url):
     print(f'Searching {site_url}')
-    result_course_list = list()
-    courses_list = list()
-    smart = req.get(site_url).text
-    smart_soup = BeautifulSoup(smart, 'html.parser')
-    grid = smart_soup.find_all("div", {"class": "item"})
-    for item in grid:
-        tag_list = item.find_all("span", {"class": "tag-post"})
-        for tag in tag_list:
-            if "Programming" in tag.text:
-                courses_list.append(item.find("h2", {"class": "grid-tit"}).find("a", href=True)["href"])
+    scrapped_courses = list()
+    valid_courses = list()
 
-    for course in courses_list:
+    try:
+        text = req.get(site_url).text
+        soup = BeautifulSoup(text, 'html.parser')
+        grid = soup.find_all("div", {"class": "item"})
+    except Exception as e:
+        print(f"Error getting {site_url}: {e}")
+        return 1
+
+    for item in grid:
+        tags = item.find_all("span", {"class": "tag-post"})
+        for t in tags:
+            if "Programming" in t.text:
+                link = item.find("h2", {"class": "grid-tit"}).find("a", href=True)["href"]
+                scrapped_courses.append(link)
+
+    for course in scrapped_courses:
         try:
-            course_html = req.get(course).text
-            course_soup = BeautifulSoup(course_html, 'html.parser')
+            course_text = req.get(course).text
+            course_soup = BeautifulSoup(course_text, 'html.parser')
             class_info = {"class": "fasc-button fasc-size-xlarge fasc-type-flat"}
-            url = course_soup.find("a", class_info, href=True)["href"]
-            u = urlparse(url)
-            query = parse_qs(u.query, keep_blank_values=True)
-            coupon_code = query.get('couponCode')[0]
-            result = url.split('?')[0]+"?couponCode="+coupon_code
-            if validate(result):
-                result_course_list.append(result)
-            else:
-                continue
+            course_url = course_soup.find("a", class_info, href=True)["href"]
+            coupon_code = get_coupon_code(course_url)
+            result = course_url.split('?')[0]+"?couponCode="+coupon_code
         except Exception as e:
-            print(f"Error getting course: {e}")
+            print(f"Error processing {course}: {e}")
             continue
-    return result_course_list
+
+        if validate(result):
+            valid_courses.append(result)
+        else:
+            continue
+
+    return 0

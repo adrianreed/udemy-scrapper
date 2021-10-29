@@ -4,7 +4,6 @@ Main script to call all scrappers
 from scrappers.scrap_smartybro import scrap_smartybro
 from scrappers.scrap_couponsme import scrap_couponsme
 
-
 site_couponsme = "https://udemycoupons.me/"
 site_smartybro = "https://smartybro.com/category/udemy-coupon-100-off/"
 
