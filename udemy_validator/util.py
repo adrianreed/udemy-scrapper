@@ -15,7 +15,10 @@ def get_coupon_code(url):
     """
     u = urlparse(url)
     query = parse_qs(u.query, keep_blank_values=True)
-    return query.get('couponCode')[0]
+    if len(query)==0:
+        return None
+    else:
+        return query.get('couponCode')[0]
 
 
 def get_course_id(url):

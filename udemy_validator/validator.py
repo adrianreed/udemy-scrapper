@@ -14,7 +14,8 @@ def validate(scrapper_link):
     """
     course_id = get_course_id(scrapper_link)
     coupon_code = get_coupon_code(scrapper_link)
-
+    if coupon_code == None:
+        return False
     url_string = (f"https://www.udemy.com/api-2.0/course-landing-components/{course_id}"
                   f"/me/?couponCode={coupon_code}&components=redeem_coupon,discount_expiration"
                   )
