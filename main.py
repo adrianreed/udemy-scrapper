@@ -1,10 +1,11 @@
 """
 Main script to call all scrappers
 """
+import sys
+import logging
 from udemy_validator.validator import validate
 from scrappers.scrap_couponsme import main as couponsme_main
 from scrappers.scrap_smartybro import main as smartybro_main
-import logging
 
 couponsme = "https://udemycoupons.me/"
 smartybro = "https://smartybro.com/category/udemy-coupon-100-off/"
@@ -23,14 +24,24 @@ def logger(name, file, level=logging.INFO):
 
 
 def main():
-    info = logger('info', 'info.log', level=logging.INFO)
-    # debug = logger('debug', 'debug.log', level=logging.DEBUG)
+    info = logger('info', 'info.log', level=logging.DEBUG)
 
     all_links = list()
 
     info.info('Process: Start scrapping.')
-    all_links.extend(couponsme_main(couponsme))
-    all_links.extend(smartybro_main(smartybro))
+
+    cm_result = couponsme_main(couponsme)
+    if not cm_result:
+        info.info('Failed to scan CouponsMe.')
+    else:
+        all_links.extend(cm_result)
+
+    sb_result = smartybro_main(smartybro)
+    if not sb_result:
+        info.info('Failed to scan SmartyBro.')
+    else:
+        all_links.extend(sb_result)
+
     info.info('Process: Scrapping completed.')
 
     info.info('Process: Start validations.')
@@ -46,4 +57,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

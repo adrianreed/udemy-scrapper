@@ -1,7 +1,7 @@
 """
 Udemy coupon validator
 """
-import requests
+from util.get_site import get_site
 from util.ud_url_parse import get_course_id, get_coupon_code
 
 
@@ -26,13 +26,14 @@ def validate(link):
             message=f'Invalid link: {link}. Failed to get coupon code or course id.'
         )
 
-    try:
-        json = requests.get(url_string).json()
-    except Exception as e:
+    site = get_site(url_string, headers={})
+    if not site['ok']:
+        message = site["message"]
         return dict(
             ok=False,
-            message=f'Failed to get {url_string}: {e}.'
+            message=message
         )
+    json = site['site'].json()
 
     if all(x in json for x in ("discount_expiration", "redeem_coupon")):
         # Bool, means coupon is enabled
