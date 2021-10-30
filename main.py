@@ -11,17 +11,13 @@ smartybro = "https://smartybro.com/category/udemy-coupon-100-off/"
 
 
 def logger(name, file, level=logging.INFO):
-
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     file_handler = logging.FileHandler(file, mode='w')
     file_handler.setFormatter(formatter)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
 
     log = logging.getLogger(name)
     log.setLevel(level)
     log.addHandler(file_handler)
-    log.addHandler(stream_handler)
 
     return log
 
