@@ -1,32 +1,70 @@
 """
 Udemy coupon validator
 """
+from util.get_site import get_site
+from util.ud_url_parse import get_course_id, get_coupon_code
 
-import requests as req
-from udemy_validator.util import get_course_id, get_coupon_code
 
-
-def validate(scrapper_link):
+def validate(link):
     """
     Validates coupon data to ensure it's usable
-    :param scrapper_link: (str) Udemy course link retrieved from scrapper
-    :return: (bool) True=valid False=invalid
+    :param link: (str) Udemy course link retrieved from scrapper
+    :return: (dict) ok: (bool) valid/invalid link
+                    exp_date: (str) if True
+                    message: (str) if False
     """
-    course_id = get_course_id(scrapper_link)
-    coupon_code = get_coupon_code(scrapper_link)
-    if coupon_code == None:
-        return False
-    url_string = (f"https://www.udemy.com/api-2.0/course-landing-components/{course_id}"
-                  f"/me/?couponCode={coupon_code}&components=redeem_coupon,discount_expiration"
-                  )
-    validation = req.get(url_string).json()
+    course_id = get_course_id(link)
+    coupon_code = get_coupon_code(link)
 
-    if all(k in validation for k in ("discount_expiration", "redeem_coupon")):
-        coupon_enabled = validation["discount_expiration"]["data"]["is_enabled"]
-        coupon_details = validation["redeem_coupon"]["discount_attempts"][0]["details"]
-        if coupon_enabled and coupon_details is None:
-            exp_date = validation["discount_expiration"]["data"]["discount_deadline_text"]
-            print(f'{scrapper_link} expires in {exp_date}')
-            return True
+    if all(x is not None for x in (course_id, coupon_code)):
+        url_string = (f"https://www.udemy.com/api-2.0/course-landing-components/{course_id}"
+                      f"/me/?couponCode={coupon_code}&components=redeem_coupon,discount_expiration"
+                      )
+    else:
+        return dict(
+            ok=False,
+            message=f'Invalid link: {link}. Failed to get coupon code or course id.'
+        )
+
+    site = get_site(url_string, headers={})
+    if not site['ok']:
+        message = site["message"]
+        return dict(
+            ok=False,
+            message=message
+        )
+    json = site['site'].json()
+
+    if all(x in json for x in ("discount_expiration", "redeem_coupon")):
+        # Bool, means coupon is enabled
+        enabled = json["discount_expiration"]["data"]["is_enabled"]
+        # If there's details, coupon is not valid
+        details = json["redeem_coupon"]["discount_attempts"][0]["details"]
+        # Valid coupons got expiration date info
+        exp_date = json["discount_expiration"]["data"]["discount_deadline_text"]
+
+        if not enabled:
+            return dict(
+                ok=False,
+                message=f'Invalid link: {link}. Coupon not enabled.'
+            )
+        elif details is not None:
+            return dict(
+                ok=False,
+                message=f'Invalid link: {link}. {details}'
+            )
+        elif not exp_date:
+            return dict(
+                ok=False,
+                message=f'Invalid link: {link}. Failed to get expiration date.'
+            )
         else:
-            return False
+            return dict(
+                ok=True,
+                exp_date=exp_date
+            )
+    else:
+        return dict(
+            ok=False,
+            message=f'{link} may be already free. Link missing discount_expiration and data redeem_coupon data.'
+        )

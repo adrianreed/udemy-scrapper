@@ -1,82 +1,87 @@
 """
 Scrapper for SmartyBro
 """
-
-from udemy_validator.util import get_coupon_code
-from udemy_validator.validator import validate
-from scrappers.util import get_soup, chunks
-import threading
+from util.get_site import get_site
+from util.get_soup import get_soup
+from util.ud_url_parse import get_coupon_code
 
 
-def scrap_smartybro(site_url):
-    print(f'Searching {site_url}')
-
-    scrapped_courses = landing_page_scrap(site_url)
-
-    hilosLinks = list(
-        chunks(scrapped_courses, int((len(scrapped_courses)/10)+1)))
-    threads = []
-    identificador = 0
-    for x in range(0, 8):
-        threads.append(threading.Thread(
-            target=courses_scrapping, args=(hilosLinks[x],)))
-        identificador = identificador+1
-        pass
-    for x in threads:
-        x.start()
-        pass
-    for x in threads:
-        x.join()
-        pass
-
-    return 0
-
-
-def landing_page_scrap(site_url):
+def scrap_site(url):
     """
     Get the list of courses in the landing page
-    :param site_url: (str)
-    :return: scrapped_courses (list)
+    :param url: (str)
+    :return: courses (set)
     """
-    scrapped_courses = list()
-    try:
-        soup = get_soup(site_url)
-        grid = soup.find_all("div", {"class": "item"})
-    except Exception as e:
-        print(f"Error getting {site_url}: {e}")
-        return 1
+    links = list()
 
-    for item in grid:
-        tags = item.find_all("span", {"class": "tag-post"})
+    site = get_site(url)
+    if not site['ok']:
+        message = site["message"]
+        return dict(
+            ok=False,
+            message=message
+        )
+    text = site['site'].text
+    soup = get_soup(text)
+    if not soup['ok']:
+        message = soup["message"]
+        return dict(
+            ok=False,
+            message=message
+        )
+    s = soup['soup']
+
+    grid = s.find_all("div", {"class": "item"})
+    for i in grid:
+        tags = i.find_all("span", {"class": "tag-post"})
         for t in tags:
             if "Programming" in t.text:
-                link = item.find("h2", {"class": "grid-tit"}
-                                 ).find("a", href=True)["href"]
-                scrapped_courses.append(link)
+                title = i.find("h2",
+                               {"class": "grid-tit"}
+                               )
+                link = title.find("a", href=True)["href"]
+                links.append(link)
 
-    return scrapped_courses
+    return dict(
+        ok=True,
+        links=links
+    )
 
 
-def courses_scrapping(scrapped_courses):
+def get_udemy_links(scrap_links):
     """
-    Get the list of validated courses
-    :param scrapped_courses: (list)
-    :return: valid_courses (list)
+    Scan list of link sites' and extract Udemy links.
+    :param scrap_links: (set)
+    :return: Udemy links (list)
     """
-    valid_courses = list()
-    for course in scrapped_courses:
-        try:
-            course_soup = get_soup(course)
-            class_info = {
-                "class": "fasc-button fasc-size-xlarge fasc-type-flat"}
-            course_url = course_soup.find("a", class_info, href=True)["href"]
-            coupon_code = get_coupon_code(course_url)
-            result = course_url.split('?')[0]+"?couponCode="+coupon_code
-        except Exception as e:
-            print(f"Error processing {course}: {e}")
+    udemy_links = list()
+
+    for li in scrap_links:
+        site = get_site(li)
+        if not site['ok']:
+            message = site["message"]
+            return dict(
+                ok=False,
+                message=message
+            )
+        text = site['site'].text
+        soup = get_soup(text)
+        if not soup['ok']:
             continue
-        if validate(result):
-            valid_courses.append(result)
-        else:
+        s = soup['soup']
+        class_info = {"class": "fasc-button fasc-size-xlarge fasc-type-flat"}
+        course_url = s.find("a", class_info, href=True)["href"]
+        coupon_code = get_coupon_code(course_url)
+        if not coupon_code:
             continue
-    return valid_courses
+        udemy_link = course_url.split('?')[0]+"?couponCode="+coupon_code
+        udemy_links.append(udemy_link)
+
+    return udemy_links
+
+
+def main(url):
+    result = scrap_site(url)
+    if not result['ok']:
+        return False
+    return get_udemy_links(result['links'])
