@@ -1,10 +1,18 @@
 """
 Scrapper for SmartyBro
 """
+import logging
+from udemy_validator.validator import validate
 from util.get_site import get_site
 from util.get_soup import get_soup
+from util.threader import threader
 from util.ud_url_parse import get_coupon_code
 
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+file_handler = logging.FileHandler("scrap_couponsme.log", mode="w")
+file_handler.setFormatter(formatter)
+log = logging.getLogger(__name__)
+log.addHandler(file_handler)
 
 def scrap_site(url):
     """
@@ -14,21 +22,16 @@ def scrap_site(url):
     """
     links = list()
 
+    log.info("Start")
     site = get_site(url)
     if not site['ok']:
-        message = site["message"]
-        return dict(
-            ok=False,
-            message=message
-        )
+        log.error(site["message"])
+        return links
     text = site['site'].text
     soup = get_soup(text)
     if not soup['ok']:
-        message = soup["message"]
-        return dict(
-            ok=False,
-            message=message
-        )
+        log.error(soup["message"])
+        return links
     s = soup['soup']
 
     grid = s.find_all("div", {"class": "item"})
@@ -42,10 +45,7 @@ def scrap_site(url):
                 link = title.find("a", href=True)["href"]
                 links.append(link)
 
-    return dict(
-        ok=True,
-        links=links
-    )
+    return links
 
 
 def get_udemy_links(scrap_links):
@@ -57,13 +57,11 @@ def get_udemy_links(scrap_links):
     udemy_links = list()
 
     for li in scrap_links:
+        log.info(f"Start: {li}")
         site = get_site(li)
         if not site['ok']:
-            message = site["message"]
-            return dict(
-                ok=False,
-                message=message
-            )
+            log.error(site["message"])
+            continue
         text = site['site'].text
         soup = get_soup(text)
         if not soup['ok']:
@@ -75,13 +73,14 @@ def get_udemy_links(scrap_links):
         if not coupon_code:
             continue
         udemy_link = course_url.split('?')[0]+"?couponCode="+coupon_code
-        udemy_links.append(udemy_link)
+        if validate(udemy_link):
+            udemy_links.append(udemy_link)
 
     return udemy_links
 
 
 def main(url):
     result = scrap_site(url)
-    if not result['ok']:
+    if len(result) == 0:
         return False
-    return get_udemy_links(result['links'])
+    return threader(result,get_udemy_links)

@@ -44,15 +44,6 @@ def main():
 
     info.info('Process: Scrapping completed.')
 
-    info.info('Process: Start validations.')
-    for li in all_links:
-        result = validate(li)
-        if not result["ok"]:
-            info.info(result['message'])
-            continue
-        print(f'{li} expires in {result["exp_date"]}')
-    info.info('Process: Validations completed.')
-
     return 0
 
 
