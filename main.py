@@ -46,11 +46,10 @@ def main():
 
     info.info('Process: Start validations.')
     for li in all_links:
-        result = validate(li)
-        if not result["ok"]:
-            info.info(result['message'])
+        result, exp_date = validate(li)
+        if not result:
             continue
-        print(f'{li} expires in {result["exp_date"]}')
+        print(f'{li} expires in {exp_date}')
     info.info('Process: Validations completed.')
 
     return 0
