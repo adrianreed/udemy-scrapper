@@ -1,7 +1,7 @@
 import threading
 
 
-def threader(courses):
+def threader(courses,func):
     """
     Create threads to process multiple requests.
     :param courses:
@@ -11,8 +11,8 @@ def threader(courses):
     thread_links = list(chunks(courses, size))
     threads = []
     flag = 0
-    for x in range(0, 9):
-        th = threading.Thread(target=courses, args=(thread_links[x],))
+    for x in range(0, len(thread_links)):
+        th = threading.Thread(target=func, args=(thread_links[x],))
         th.start()
         threads.append(th)
         flag += 1
@@ -28,4 +28,6 @@ def chunks(li, size):
     :param size: (int) size of the chunks
     :return: chunks (list) list of chunks
     """
-    return [list[i:i+size] for i in range(0, len(li), size)]
+    chunks = [li[i:i+size] for i in range(0, len(li), size)]
+
+    return chunks

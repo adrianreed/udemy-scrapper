@@ -23,7 +23,7 @@ def validate(link):
     
     course_id = get_course_id(link)
     coupon_code = get_coupon_code(link)
-    log.info(f"validation of: {link}")
+    log.debug(f"validation of: {link}")
     if all(x is not None for x in (course_id, coupon_code)):
         url_string = (f"https://www.udemy.com/api-2.0/course-landing-components/{course_id}"
                       f"/me/?couponCode={coupon_code}&components=redeem_coupon,discount_expiration"
@@ -59,7 +59,8 @@ def validate(link):
             return False
         else:
             log.info(f"{link} expires in {exp_date}")
-            return True, exp_date 
+            print(f"{link} expires in {exp_date}")
+            return True 
     else:
         log.error(f"{link} may be already free. Link missing discount_expiration and data redeem_coupon data.")
         return False

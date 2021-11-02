@@ -1,9 +1,17 @@
 """
 Scrapper for CouponsMe
 """
+import logging
+from util.threader import threader
+from udemy_validator.validator import validate
 from util.get_site import get_site
 from util.get_soup import get_soup
 
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+file_handler = logging.FileHandler("scrap_couponsme.log", mode="w")
+file_handler.setFormatter(formatter)
+log = logging.getLogger(__name__)
+log.addHandler(file_handler)
 
 def scrap_site(url):
     """
@@ -11,23 +19,20 @@ def scrap_site(url):
     :param url: (str)
     :return courses: (set)
     """
+
+
     links = list()
 
+    log.info("Start")
     site = get_site(url)
     if not site['ok']:
-        message = site["message"]
-        return dict(
-            ok=False,
-            message=message
-        )
+        log.error(site["message"])
+        return links
     text = site['site'].text
     soup = get_soup(text)
     if not soup['ok']:
-        message = soup["message"]
-        return dict(
-            ok=False,
-            message=message
-        )
+        log.error(soup["message"])
+        return links
     s = soup['soup']
 
     grid = s.find_all("a",
@@ -35,13 +40,10 @@ def scrap_site(url):
                       href=True)
     for i in grid:
         links.append(i["href"])
-    links = set(links)
+    links = list(set(links))
 
-    return dict(
-        ok=True,
-        links=links
-    )
-
+    return links
+    
 
 def get_udemy_links(scrap_links):
     """
@@ -52,13 +54,11 @@ def get_udemy_links(scrap_links):
     udemy_links = list()
 
     for li in scrap_links:
+        log.info(f"Start: {li}")
         site = get_site(li)
         if not site['ok']:
-            message = site["message"]
-            return dict(
-                ok=False,
-                message=message
-            )
+            log.error(site["message"])
+            continue
         text = site['site'].text
         soup = get_soup(text)
         if not soup['ok']:
@@ -71,7 +71,8 @@ def get_udemy_links(scrap_links):
         for i in item:
             if '[ENROLL THE COURSE]' in i.text:
                 udemy_link = i["href"]
-                udemy_links.append(udemy_link)
+                if validate(udemy_link):
+                    udemy_links.append(udemy_link)
             else:
                 continue
     return udemy_links
@@ -79,6 +80,6 @@ def get_udemy_links(scrap_links):
 
 def main(url):
     result = scrap_site(url)
-    if not result['ok']:
+    if len(result) == 0:
         return False
-    return get_udemy_links(result['links'])
+    return threader(result,get_udemy_links)
