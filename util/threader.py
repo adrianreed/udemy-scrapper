@@ -1,9 +1,11 @@
+import logging
 import threading
 
 
-def threader(courses,func):
+def threader(func, courses):
     """
     Create threads to process multiple requests.
+    :param func:
     :param courses:
     :return:
     """
@@ -20,6 +22,8 @@ def threader(courses,func):
     for x in threads:
         x.join()
 
+    return
+
 
 def chunks(li, size):
     """
@@ -28,6 +32,6 @@ def chunks(li, size):
     :param size: (int) size of the chunks
     :return: chunks (list) list of chunks
     """
-    chunks = [li[i:i+size] for i in range(0, len(li), size)]
+    c = [li[i:i + size] for i in range(0, len(li), size)]
 
-    return chunks
+    return c
